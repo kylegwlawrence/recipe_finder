@@ -7,8 +7,3 @@ def generate_recipes(ingredients, num_recipes):
     f = build_recipes_from_ingredients(apikey, ingredients, num_recipes)
     md = read_recipe_to_markdown(f)
     print(f'Recipes saved to {md}')
-
-if __name__=='__main__':
-    ingredients = 'broccoli, cucumber, red pepper, rice'
-    num_recipes = 5
-    generate_recipes(ingredients, num_recipes)

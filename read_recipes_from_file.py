@@ -26,10 +26,15 @@ def read_recipe_to_markdown(recipe_file):
     with open(recipe_file) as f:
         recipes = json.loads(f.readlines()[0])
 
-    recipe_file_name = recipe_file.replace('.txt','').replace('recipes/','')
-    ingredients = recipe_file_name.split('_')[0].replace('-',', ')
+    md_file_name = recipe_file.replace('.txt','').replace('recipes/','')
+    ingredients = md_file_name.split('_')[0].replace('-',', ')
 
-    mdFile = MdUtils(file_name = f'md_recipes/recipes_{recipe_file_name}', title = f'Recipes for {ingredients}')
+    mdFile = MdUtils(file_name = f'md_recipes/recipes_{md_file_name}', title = f'Recipes for {ingredients}')
+
+    mdFile.new_header(level=3, title=f'Recipes:', add_table_of_contents='n')
+    for r in recipes:
+        r_name = r.get('name')
+        mdFile.new_line(f'  - {r_name}')
 
     for r in recipes:
         r_name = r.get('name')
@@ -50,8 +55,8 @@ def read_recipe_to_markdown(recipe_file):
         mdFile.new_header(level=3, title=f'Directions', add_table_of_contents='n')
         for instruction in r.get('instructions'):
             mdFile.new_line(f'  - {instruction}')
-
     mdFile.create_md_file()
+    return md_file_name
 
 if __name__ == '__main__':
     f = 'recipes/beef-onions-celery-carrots-saffron-milk-kimchi_5_20240311-090134.txt'

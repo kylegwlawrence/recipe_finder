@@ -2,6 +2,13 @@
 Recipes for beef, onions, celery, carrots, saffron, milk, kimchi
 ================================================================
 
+### Recipes:
+  
+  - Slow Cooker Beef Stew  
+  - Authentic Bolognese Sauce  
+  - Beef rolls with vegetables  
+  - Classic Pot Roast  
+  - Venison Stew
 ## Slow Cooker Beef Stew
 
 ### Ingredients

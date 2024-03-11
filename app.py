@@ -47,7 +47,7 @@ def instructions(instructions_contents) -> list[str]:
             recipe_instructions.append(string)
     return recipe_instructions
 
-def recipe_names(recipes_contents) -> list[dict]:
+def parse_recipes(recipes_contents) -> list[dict]:
     """return list of tuples with id and recipe name"""
     recipes = []
     for entry in recipes_contents:
@@ -56,13 +56,23 @@ def recipe_names(recipes_contents) -> list[dict]:
             d = {}
             d['id'] = recipe.get('id')
             d['name'] = recipe.get('title')
+            ingredients = []
+
+            for ingredient in recipe.get('usedIngredients'):
+                ingredients.append(ingredient.get('original'))
+            for ingredient in recipe.get('unusedIngredients'):
+                ingredients.append(ingredient.get('original'))
+            for ingredient in recipe.get('missedIngredients'):
+                ingredients.append(ingredient.get('original'))
+            d['ingredients'] = ingredients
+
             recipes.append(d)
     return recipes
 
 def build_recipes_from_ingredients(apikey, ingredients:str, num_recipes_returned:int, use_sample='yes') -> list[dict]:
     """Take a a number of ingredients as csv list and returns num_recipes_returned with instructions"""
     recipes_contents = get_recipes_by_ingredients(apikey, ingredients, num_recipes_returned, use_sample)
-    recipes = recipe_names(recipes_contents)
+    recipes = parse_recipes(recipes_contents)
     for recipe in recipes:
         recipe_id = recipe.get('id')
         instructions_contents = get_recipe_instructions(apikey, recipe_id, use_sample)
@@ -82,12 +92,3 @@ if __name__ == '__main__':
     ingredients = ingredients.replace(', ','-').replace(' ','')
     with open(f'recipes/{ingredients}_{num_recipes_returned}_{timestr}.txt', 'w') as f:
         json.dump(recipes, f)
-
-
-
-
-
-
-    #used_ingredients = data.get('usedIngredients')
-    #unused_ingredients = data.get('unusedIngredients')
-    #missed_ingredients = data.get('missedIngredients')

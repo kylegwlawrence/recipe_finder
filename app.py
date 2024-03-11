@@ -9,7 +9,7 @@ def get_recipes_by_ingredients(ingredients:str, num_recipes_returned:int, use_sa
 
     if use_sample.lower()=='yes':
         with open('sample.txt') as f:
-            contents = f.readlines()
+            response_contents = f.readlines()
         #print(contents)
 
     elif use_sample.lower()=='no':
@@ -20,18 +20,28 @@ def get_recipes_by_ingredients(ingredients:str, num_recipes_returned:int, use_sa
         url = f'https://api.spoonacular.com/recipes/findByIngredients?ingredients={ingredients}&number={num_recipes_returned}&apiKey={apikey}'
 
         r = requests.get(url)
-        contents = r.text
+        response_contents = r.text
 
-    return contents
+    return response_contents
+
+def list_recipe_names(response_contents):
+    recipes = []
+    for entry in response_contents:
+        data = json.loads(entry)
+        for recipe in data:
+            recipes.append(recipe.get('title'))
+    return recipes
 
 if __name__ == '__main__':
-    contents = get_recipes_by_ingredients(use_sample = 'yes', ingredients = 'lamb, potato, olive oil', num_recipes_returned=3)
+    response_contents = get_recipes_by_ingredients(use_sample = 'yes', ingredients = 'lamb, potato, olive oil', num_recipes_returned=3)
     
-    data = json.loads(contents[0])[0]
+    print(list_recipe_names(response_contents))
 
-    used_ingredients = data.get('usedIngredients')
-    unused_ingredients = data.get('unusedIngredients')
-    missed_ingredients = data.get('missedIngredients')
 
-    for a in unused_ingredients:
-        print(a)
+    #used_ingredients = data.get('usedIngredients')
+    #unused_ingredients = data.get('unusedIngredients')
+    #missed_ingredients = data.get('missedIngredients')
+
+    #print(contents)
+    #for a in unused_ingredients:
+    #    print(a)

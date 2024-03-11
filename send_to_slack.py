@@ -3,37 +3,27 @@ import os
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-def send_to_slack(f_path:str, channel_id:str="C06NZKA1L03") -> None:
-	"""Take a recipe markdown file and upload it to a given channel_id in your Slack workspace."""
+def send_to_slack(github_link:str, channel_id:str="C06NZKA1L03") -> None:
+	"""Send a message with a link to slack"""
 	logger = logging.getLogger(__name__)
+
+	# get recipe ingredients from link and num recipes
+	recipe_info = github_link.split('/')[-1]
+	ingredients = recipe_info.split('_')[1].replace('-', ', ')
+	num_recipes = recipe_info.split('_')[2]
+
     # instantiate the webclient with a bot token
 	try:
 		client = WebClient(token=os.environ.get("SLACK_BOT_TOKEN"))
-		# Tests to see if the token is valid
-		auth_test = client.auth_test()
-		bot_user_id = auth_test["user_id"]
-		print(f"App's bot user: {bot_user_id}")
-		print(f'Auth test results: {auth_test}')
 	except SlackApiError as e:
 		logger.error("Error creating client: {}".format(e))
 	try:
-		# call method to upload files to channel
-		result = client.files_upload_v2(
-			channel=channel_id,
-			initial_comment="New recipes",
-			file=f'./{f_path}',
-			request_file_info=False
-		)
-		logger.info(result)
-
 		# call app.client.chat_postMessage
 		result = client.chat_postMessage(
 			channel=channel_id,
-			text=" - list item 1\n - list item 2", 
-			mrkdwn=True
+			text=f"{num_recipes} new recipes for {ingredients} in <{github_link}|Github>"
 		)
 		logger.info(result)
-
 	except SlackApiError as e:
 		logger.error("Error uploading file: {}".format(e))
 		# send failure message to slack channel
@@ -47,6 +37,6 @@ def send_to_slack(f_path:str, channel_id:str="C06NZKA1L03") -> None:
 			logger.error("Error sending failure message: {}".format(e))   
 			
 if __name__=='__main__':
-	md_file = 'md_recipes/recipes_beef-onions-celery-carrots-saffron-milk-kimchi_5_20240311-090134.md'
+	g = 'https://github.com/kylegwlawrence/recipe_finder/blob/main/md_recipes/recipes_vodkasauce-pasta-kale_3_20240311-144445_test2.md'
 	#md_file = 'requirements.txt'
-	send_to_slack(md_file)
+	send_to_slack(g)

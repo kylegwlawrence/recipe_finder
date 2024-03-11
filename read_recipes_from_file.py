@@ -28,8 +28,9 @@ def read_recipe_to_markdown(recipe_file):
 
     md_file_name = recipe_file.replace('.txt','').replace('recipes/','')
     ingredients = md_file_name.split('_')[0].replace('-',', ')
+    md_file_name_full = f'md_recipes/recipes_{md_file_name}'
 
-    mdFile = MdUtils(file_name = f'md_recipes/recipes_{md_file_name}', title = f'Recipes for {ingredients}')
+    mdFile = MdUtils(file_name = md_file_name_full, title = f'Recipes for {ingredients}')
 
     mdFile.new_header(level=3, title=f'Recipes:', add_table_of_contents='n')
     for r in recipes:
@@ -56,9 +57,10 @@ def read_recipe_to_markdown(recipe_file):
         for instruction in r.get('instructions'):
             mdFile.new_line(f'  - {instruction}')
     mdFile.create_md_file()
-    return md_file_name
+    return f'{md_file_name_full}.md'
 
 if __name__ == '__main__':
     f = 'recipes/beef-onions-celery-carrots-saffron-milk-kimchi_5_20240311-090134.txt'
     #read_recipe(f)
-    read_recipe_to_markdown(f)
+    md_file_name_full = read_recipe_to_markdown(f)
+    print(md_file_name_full)

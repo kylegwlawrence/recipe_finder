@@ -4,11 +4,15 @@ import json
 import time
 from read_recipes_from_file import read_recipe
 
-def get_recipes_by_ingredients(apikey, ingredients:str, num_recipes_returned:int):
+def get_recipes_by_ingredients(apikey, ingredients:str, num_recipes_returned:int, ranking):
     """api limit of 150 per day and 1 call per second. Each call uses 1 point and each recipes returned is 0.01 point"""
     # format ingredients string for url
     ingredients = ingredients.replace(',',',+')
-    url = f'https://api.spoonacular.com/recipes/findByIngredients?ingredients={ingredients}&number={num_recipes_returned}&apiKey={apikey}'
+    if ranking == 'max_used_ingredients':
+        rank = 1
+    elif ranking == 'min_missing_ingredients':
+        rank = 2
+    url = f'https://api.spoonacular.com/recipes/findByIngredients?ingredients={ingredients}&number={num_recipes_returned}&ranking={rank}&apiKey={apikey}'
     r = requests.get(url)
     recipes_contents = r.text
     time.sleep(1.5)
@@ -27,8 +31,15 @@ def parse_instructions(instructions_content) -> list[str]:
     recipe_instructions = []
     data = json.loads(instructions_content)
     for entry in data:
+        # keep keys equipment, number, step in
+
+
         for instruction_step in entry.get('steps'):
             string = f"Step {instruction_step.get('number')}: {instruction_step.get('step')}"
+            equipment = []
+            for tool in instruction_step.get('equipment')[0]:
+                equipment.append({instruction_step.get('number'):tool})
+            
             recipe_instructions.append(string)
     return recipe_instructions
 

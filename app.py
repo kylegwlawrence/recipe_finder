@@ -12,7 +12,7 @@ def generate_recipes(ingredients, num_recipes):
     send_to_slack(github_link)
 
 if __name__ == '__main__':
-    params = {'ingredients':'pasta, mushrooms, kale'
-              , 'num_recipes':5
+    params = {'ingredients':'rice, tuna, tomato'
+              , 'num_recipes':10
               }
     generate_recipes(**params)

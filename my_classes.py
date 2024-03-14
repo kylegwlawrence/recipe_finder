@@ -90,6 +90,13 @@ class Recipe:
         print(type(self.taste))
         return self.taste
     
+    def to_markdown():
+        """
+        Either write formatting logic here or create a MarkdownRecipe class to format then save here.
+        Simplest to format here since only applying to one class of object
+        """
+        pass
+    
 class RecipesInfoBulk:
     """
     Loop over the results of this using the Recipe class to generate attributes
@@ -154,6 +161,7 @@ class SearchRecipesByIngredients:
             self.all_ingredients.append(dict_ingredients)
         return self.all_ingredients
 
+class RecipeMarkdown:
     # make a class to build a recipe which would use either one recipe or RecipesByIngredients
     def to_markdown(self):
         if self.data==None:
@@ -221,7 +229,7 @@ if __name__ == '__main__':
         single_recipe = Recipe(id)
         single_recipe.info = recipe_info
         all_recipes.append(single_recipe) # list of Recipe objects
-    
+
 
 if __name__ == '__main':
     r = Recipe(recipe_id = 715438)

@@ -21,7 +21,7 @@ class Recipe:
         self.info = None
         self.instructions = None
     
-    def get_info(self, includeNutrition:bool=True) -> dict:
+    def get_info_from_api(self, includeNutrition:bool=True) -> dict:
         """
         Use a recipe id to get full information about a recipe, such as ingredients, nutrition, diet and allergen information, etc.
         """
@@ -31,11 +31,11 @@ class Recipe:
         self.info = json.loads(response.text)
         return self.info
     
-    def get_ingredients_from_info():
+    def get_ingredients_from_info(self):
         """
         Extract the ingredients from self.info
         """
-        pass
+        self.ingredients = None
     
     def get_instructions_from_info(self) -> list[dict]:
         """Extract the instructions from self.info
@@ -90,12 +90,13 @@ class Recipe:
         print(type(self.taste))
         return self.taste
     
-    def to_markdown():
+    def to_markdown(self):
         """
         Either write formatting logic here or create a MarkdownRecipe class to format then save here.
         Simplest to format here since only applying to one class of object
         """
-        pass
+        self.recipe_in_markdown = RecipeMarkdown(self.ingredients, self.instructions, self.list_equipment, self.name, self.servings, self.time)
+        
     
 class RecipesInfoBulk:
     """
@@ -163,7 +164,7 @@ class SearchRecipesByIngredients:
 
 class RecipeMarkdown:
     # make a class to build a recipe which would use either one recipe or RecipesByIngredients
-    def to_markdown(self):
+    def to_markdown(self, recipe_info):
         if self.data==None:
             self.get_recipes()
         title = f'Recipes for {self.ingredients}'
@@ -198,6 +199,12 @@ class RecipeMarkdown:
         except:
             print(f'Something went wrong saving {self.file_name} locally')
 
+    def save_markdown(self):
+        """
+        Save the file separately from creating it
+        """
+        pass
+        
     def publish_to_github(self, local_repo:str='/Users/kylelawrence/Documents/recipe_finder', open_browser:bool=False):
         """Pushes the markdown file to github from a local repo"""
         if not os.path.isfile(self.file_name):

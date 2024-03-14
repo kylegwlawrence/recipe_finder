@@ -25,6 +25,7 @@ def read_recipe_to_markdown(recipe_file):
     """takes a recipe file, reads it, and returns a markdown formatted recipe"""
     with open(recipe_file) as f:
         recipes = json.loads(f.readlines()[0])
+    print(type(recipes[0]))
 
     md_file_name = recipe_file.replace('.txt','').replace('recipes/','')
     ingredients = md_file_name.split('_')[0].replace('-',', ')

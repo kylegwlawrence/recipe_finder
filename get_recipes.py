@@ -32,8 +32,6 @@ def parse_instructions(instructions_content) -> list[str]:
     data = json.loads(instructions_content)
     for entry in data:
         # keep keys equipment, number, step in
-
-
         for instruction_step in entry.get('steps'):
             string = f"Step {instruction_step.get('number')}: {instruction_step.get('step')}"
             equipment = []

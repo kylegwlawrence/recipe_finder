@@ -5,6 +5,7 @@ import os
 import git
 import time
 import urllib.request
+import spoonacular_api as spa
 
 def endpoint_base() -> str:
     return 'https://api.spoonacular.com'
@@ -104,7 +105,6 @@ class Recipe:
         """
         self.recipe_in_markdown = RecipeMarkdown(self.ingredients, self.instructions, self.list_equipment, self.name, self.servings, self.time)
         
-    
 class RecipesInfoBulk:
     """
     Loop over the results of this using the Recipe class to generate attributes

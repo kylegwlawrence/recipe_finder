@@ -14,6 +14,9 @@ def apikey() -> str:
 
 class Recipe:
     def __init__(self, recipe_id:str=None):
+        """
+        :param recipe_id: the spoonacular recipe id as a string
+        """
         self.apikey = apikey()
 
         self.recipe_id = recipe_id
@@ -23,7 +26,8 @@ class Recipe:
     
     def get_info_from_api(self, includeNutrition:bool=True) -> dict:
         """
-        Use a recipe id to get full information about a recipe, such as ingredients, nutrition, diet and allergen information, etc.
+        Use a recipe id to get full information about a recipe, 
+        such as ingredients, nutrition, diet and allergen information, etc.
         """
         str_include_nutrition = str(includeNutrition).lower()
         url = f'{self.url_base}/information?includeNutrition={str_include_nutrition}&apiKey={self.apikey}'
@@ -54,6 +58,9 @@ class Recipe:
         
     # get instructions from the information endpoint - there are two keys: instructions (raw string) and analyzedInstructions
     def get_instructions_from_api(self):
+        """
+        Get the recipe instructions from the api endpoint analyzedInstructions
+        """
         url = f'{self.url_base}/analyzedInstructions?apiKey={self.apikey}'
         response = requests.get(url)
         self.instructions = json.loads(response.text)[0]
@@ -106,7 +113,7 @@ class RecipesInfoBulk:
     apikey = apikey()
     def __init__(self, recipe_ids:str) -> None:
         """
-        :recipe_ids: a comma-separated string of recipe ids
+        :param recipe_ids: a comma-separated string of recipe ids
         """
         self.recipe_ids = recipe_ids
         self.url = f'{endpoint_base()}/recipes/informationBulk?ids={self.recipe_ids}&includeNutrition=true&apiKey={self.apikey}'
@@ -150,21 +157,24 @@ class SearchRecipesByIngredients:
             self.recipe_ids.append(recipe.get('id'))
         return self.recipe_ids
     
-    def get_all_ingredients(self) -> list[dict]:
-        """extract ingredients from the get_recipes()"""
+    def get_categorized_ingredients(self) -> list[dict]:
+        """extract ingredients from the get_recipes() method"""
         if self.recipes == None:
             raise AttributeError('No recipes exist. Please create recipes using get_recipes()')
-        self.all_ingredients = []
+        self.cat_ingredients = []
         for recipe in self.recipes:
             dict_ingredients = {'recipe_id':recipe.get('id')}
-            for ingredient_type in ['usedIngredients', 'missedIngredients', 'unusedIngredient']:
-                dict_ingredients[ingredient_type] = recipe.get(ingredient_type)
-            self.all_ingredients.append(dict_ingredients)
-        return self.all_ingredients
+            for ingredient_cat in ['usedIngredients', 'missedIngredients', 'unusedIngredient']:
+                dict_ingredients[ingredient_cat] = recipe.get(ingredient_cat)
+            self.cat_ingredients.append(dict_ingredients)
+        return self.cat_ingredients
 
 class RecipeMarkdown:
     # make a class to build a recipe which would use either one recipe or RecipesByIngredients
     def to_markdown(self, recipe_info):
+        """
+        Create a formatted markdown file with the 
+        """
         if self.data==None:
             self.get_recipes()
         title = f'Recipes for {self.ingredients}'
@@ -198,12 +208,6 @@ class RecipeMarkdown:
             mdFile.create_md_file()
         except:
             print(f'Something went wrong saving {self.file_name} locally')
-
-    def save_markdown(self):
-        """
-        Save the file separately from creating it
-        """
-        pass
         
     def publish_to_github(self, local_repo:str='/Users/kylelawrence/Documents/recipe_finder', open_browser:bool=False):
         """Pushes the markdown file to github from a local repo"""

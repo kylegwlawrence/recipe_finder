@@ -41,7 +41,7 @@ class Recipe:
         self.info = json.loads(response.text)
         return self.info
     
-    def get_ingredients_from_info(self):
+    def get_ingredients_from_info(self) -> list:
         """
         Extract the ingredients from self.info
         """
@@ -137,7 +137,6 @@ class SearchRecipesByIngredients:
     Although this endpoint comes with equipment, instructions have to be called separately per id.
     Instead pull all recipe info at once contained within same api response to obtain
     """
-    api_key = api_key()
     def __init__(self, ingredients:str, num_recipes:int, rank_ingredients:str='maximize_used') -> None:
         self.ingredients = ingredients
         url_ingredients = ingredients.replace(', ',',+')
@@ -151,8 +150,11 @@ class SearchRecipesByIngredients:
                 self.rank = 1
             else:
                 self.rank = 2
-        self.url = f'{endpoint_base()}/recipes/findByIngredients?apiKey={self.api_key}&ingredients={self.ingredients}&number={self.num_recipes}&ranking={self.rank}'
+        token = os.environ.get("SPOON_API_TOKEN")
+        self.url = f'{endpoint_base()}/recipes/findByIngredients?apiKey={token}&ingredients={self.ingredients}&number={self.num_recipes}&ranking={self.rank}'
+        print(f'---  {self.url}  ---')
     
+    # need to handle failure responses like this: {'status': 'failure', 'code': 401, 'message': 'You are not authorized. Please read https://spoonacular.com/food-api/docs#Authentication'}
     def get_recipes(self) -> list[dict]:
         response = requests.get(self.url)
         self.recipes = json.loads(response.text)
@@ -355,4 +357,3 @@ if __name__ == '__main__':
     channel_id = 'C06NZKA1L03'
     message = SlackMessageManyRecipes(channel_id, num_recipes, search_ingredients, github_link)
     message.send()
-

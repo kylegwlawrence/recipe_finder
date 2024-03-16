@@ -14,7 +14,9 @@ def endpoint_base() -> str:
     return 'https://api.spoonacular.com'
 
 def api_key() -> str:
-    api_key = os.environ.get("SPOON_API_TOKEN")
+    api_key = os.environ.get("SPOON_API_TOKENS")
+    if api_key==None:
+        raise KeyError('Token is not found')
     return api_key
 
 class Recipe:

@@ -1,11 +1,14 @@
 import requests
 import json
 from mdutils.mdutils import MdUtils
-import os
 import git
 import time
 import urllib.request
 import spoonacular_api as spa
+import logging
+import os
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 
 def endpoint_base() -> str:
     return 'https://api.spoonacular.com'
@@ -83,9 +86,10 @@ class Recipe:
         self.list_tools = []
         for instruction in self.instructions:
             equipment = instruction.get('equipment')
-            for tool in equipment:
-                tool_name = tool.get('name')
-                self.list_tools.append(tool_name)
+            if equipment!=None:
+                for tool in equipment:
+                    tool_name = tool.get('name')
+                    self.list_tools.append(tool_name)
         return self.list_tools
         
     def get_name(self) -> str:
@@ -261,31 +265,77 @@ class ManyRecipesMarkdown:
         except:
             print(f'Something went wrong saving {self.file_name} locally')
         
-    def publish_to_github(self, local_repo:str='/Users/kylelawrence/Documents/recipe_finder', open_browser:bool=False):
+class GithubPublisher:
+    def __init__(self, file_name, repo = None) -> None:
+        self.file_name = file_name
+        if repo==None:
+            self.repo = git.Repo('/Users/kylelawrence/Documents/recipe_finder')
+        else:
+            self.repo = repo 
+
+    def publish(self, open_browser:bool=False):
         """Pushes the markdown file to github from a local repo"""
-        if not os.path.isfile(self.file_name):
-            self.to_markdown()
-        # define the local repo
-        local_repo = git.Repo(local_repo)
         # add the changes
-        local_repo.index.add([self.file_name]) 
+        self.repo.index.add([self.file_name]) 
         print('Files Added Successfully') 
-        local_repo.index.commit(f'Save {self.file_name} to github') 
+        self.repo.index.commit(f'Save {self.file_name} to github') 
         print('Commited successfully')
-        origin = local_repo.remote(name='origin')
+        origin = self.repo.remote(name='origin')
         origin.push()
         print('Pushed changes to origin')
         self.github_link = f'https://github.com/kylegwlawrence/recipe_finder/blob/main/{self.file_name}'
         if open_browser:
             urllib.request.urlopen(self.github_link)
+        return self.github_link
+
+class SlackMessageManyRecipes:
+    def __init__(self, channel_id, num_recipes, search_ingredients, github_link) -> None:
+        self.channel_id = channel_id
+        self.num_recipes = num_recipes
+        self.search_ingredients = search_ingredients
+        self.github_link = github_link
+
+    def send(self) -> None:
+        """Send a message with a link to slack"""
+        logger = logging.getLogger(__name__)
+
+        # contruct the message string
+        msg=f"{self.num_recipes} new recipes for {self.search_ingredients} in <{self.github_link}|Github>"
+
+        # instantiate the webclient with a bot token
+        try:
+            client = WebClient(token=os.environ.get("SLACK_BOT_TOKEN"))
+        except SlackApiError as e:
+            logger.error("Error creating client: {}".format(e))
+        
+        # send the message
+        try:
+            # call app.client.chat_postMessage
+            result = client.chat_postMessage(
+                channel=self.channel_id,
+                text=msg
+            )
+            logger.info(result)
+        except SlackApiError as e:
+            logger.error("Error uploading file: {}".format(e))
+            # send failure message to slack channel
+            try:
+                result = client.chat_postMessage(
+                    channel=self.channel_id,
+                    text="File upload to Slack failed."
+                )
+                logger.info(result)
+            except SlackApiError as e:
+                logger.error("Error sending failure message: {}".format(e))   
 
 if __name__ == '__main__':
     # search for ingredients, get recipe ids, pass to Bulk recipe info, pass to Recipe, pass to manyMarkdown recipes
-    search_ingredients = 'lamb, cabbage, orange, ginger'
-    recipes_by_ingredients = SearchRecipesByIngredients(ingredients=search_ingredients, num_recipes=5)
+    search_ingredients = 'chicken, cabbage'
+    file_name = f'md_recipes/{search_ingredients}_{time.strftime("%Y%m%d-%H%M%S")}.md'
+    num_recipes = 5
+    recipes_by_ingredients = SearchRecipesByIngredients(ingredients=search_ingredients, num_recipes=num_recipes)
     recipes_by_ingredients.get_recipes()
     recipes_ids = recipes_by_ingredients.get_recipe_ids()
-
     bulk_info = RecipesInfoBulk(recipes_ids).get_info()
     recipe_list = []
     for recipe_info in bulk_info:
@@ -298,5 +348,11 @@ if __name__ == '__main__':
         r.get_servings()
         r.get_time()
         recipe_list.append(r)
-    md = ManyRecipesMarkdown(recipe_list, file_name = f'Recipes for {search_ingredients}.md', searched_ingredients=search_ingredients)
+    md = ManyRecipesMarkdown(recipe_list, file_name, searched_ingredients=search_ingredients)
     md.to_markdown()
+    github = GithubPublisher(file_name)
+    github_link = github.publish()
+    channel_id = 'C06NZKA1L03'
+    message = SlackMessageManyRecipes(channel_id, num_recipes, search_ingredients, github_link)
+    message.send()
+

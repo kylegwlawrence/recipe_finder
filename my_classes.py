@@ -11,19 +11,14 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from spoonacular_api import ApiClient
 
-def api_key() -> str: # build in a wait time into the api client so i dont hit the quota per min
-    api_key = os.environ.get("SPOON_API_TOKEN")
-    if api_key==None:
-        raise KeyError('Token is not found')
-    return api_key
-
 class Recipe:
     def __init__(self, recipe_id:str=None):
         """
         :param recipe_id: the spoonacular recipe id as a string
         """
-        self.api_key = ApiClient().api_key
-        root_endpoint = ApiClient().root_endpoint
+        self.api_client = ApiClient()
+        self.api_key = self.api_client.api_key
+        root_endpoint = self.api_client.root_endpoint
 
         self.recipe_id = recipe_id
         self.url_base = f'{root_endpoint}/recipes/{self.recipe_id}'
@@ -39,6 +34,7 @@ class Recipe:
         url = f'{self.url_base}/information?includeNutrition={str_include_nutrition}&apiKey={self.api_key}'
         response = requests.get(url)
         self.info = json.loads(response.text)
+        self.api_client.wait()
         return self.info
     
     def get_ingredients_from_info(self) -> list:
@@ -118,19 +114,20 @@ class RecipesInfoBulk:
     Loop over the results of this using the Recipe class to generate attributes
     This endpoint costs 1 point for the first recipe and 0.5 points per additional recipe.
     """
-    api_key = api_key()
     def __init__(self, recipe_ids:str) -> None:
         """
         :param recipe_ids: a comma-separated string of recipe ids
         """
-        self.api_key = ApiClient().api_key
-        root_endpoint = ApiClient().root_endpoint
+        self.api_client = ApiClient()
+        self.api_key = self.api_client.api_key
+        root_endpoint = self.api_client.root_endpoint
         self.recipe_ids = recipe_ids
         self.url = f'{root_endpoint}/recipes/informationBulk?ids={self.recipe_ids}&includeNutrition=true&apiKey={self.api_key}'
     
     def get_info(self) -> list[dict]:
         response = requests.get(self.url)
         self.bulk_info = json.loads(response.text)
+        self.api_client.wait()
         return self.bulk_info
 
 class SearchRecipesByIngredients:
@@ -141,8 +138,9 @@ class SearchRecipesByIngredients:
     Instead pull all recipe info at once contained within same api response to obtain
     """
     def __init__(self, ingredients:str, num_recipes:int, rank_ingredients:str='maximize_used') -> None:
-        self.api_key = ApiClient().api_key
-        root_endpoint = ApiClient().root_endpoint
+        self.api_client = ApiClient()
+        self.api_key = self.api_client.api_key
+        root_endpoint = self.api_client.root_endpoint
         self.ingredients = ingredients
         url_ingredients = ingredients.replace(', ',',+')
         self.num_recipes = num_recipes
@@ -162,6 +160,7 @@ class SearchRecipesByIngredients:
     def get_recipes(self) -> list[dict]:
         response = requests.get(self.url)
         self.recipes = json.loads(response.text)
+        self.api_client.wait()
         return self.recipes
     
     def get_recipe_ids(self) -> list:

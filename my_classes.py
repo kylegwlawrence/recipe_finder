@@ -9,11 +9,9 @@ import logging
 import os
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
+from spoonacular_api import ApiClient
 
-def endpoint_base() -> str:
-    return 'https://api.spoonacular.com'
-
-def api_key() -> str:
+def api_key() -> str: # build in a wait time into the api client so i dont hit the quota per min
     api_key = os.environ.get("SPOON_API_TOKEN")
     if api_key==None:
         raise KeyError('Token is not found')
@@ -24,8 +22,8 @@ class Recipe:
         """
         :param recipe_id: the spoonacular recipe id as a string
         """
-        self.api_key = api_key()
-        root_endpoint = endpoint_base()
+        self.api_key = ApiClient().api_key
+        root_endpoint = ApiClient().root_endpoint
 
         self.recipe_id = recipe_id
         self.url_base = f'{root_endpoint}/recipes/{self.recipe_id}'
@@ -125,8 +123,10 @@ class RecipesInfoBulk:
         """
         :param recipe_ids: a comma-separated string of recipe ids
         """
+        self.api_key = ApiClient().api_key
+        root_endpoint = ApiClient().root_endpoint
         self.recipe_ids = recipe_ids
-        self.url = f'{endpoint_base()}/recipes/informationBulk?ids={self.recipe_ids}&includeNutrition=true&apiKey={self.api_key}'
+        self.url = f'{root_endpoint}/recipes/informationBulk?ids={self.recipe_ids}&includeNutrition=true&apiKey={self.api_key}'
     
     def get_info(self) -> list[dict]:
         response = requests.get(self.url)
@@ -141,6 +141,8 @@ class SearchRecipesByIngredients:
     Instead pull all recipe info at once contained within same api response to obtain
     """
     def __init__(self, ingredients:str, num_recipes:int, rank_ingredients:str='maximize_used') -> None:
+        self.api_key = ApiClient().api_key
+        root_endpoint = ApiClient().root_endpoint
         self.ingredients = ingredients
         url_ingredients = ingredients.replace(', ',',+')
         self.num_recipes = num_recipes
@@ -153,8 +155,7 @@ class SearchRecipesByIngredients:
                 self.rank = 1
             else:
                 self.rank = 2
-        token = os.environ.get("SPOON_API_TOKEN")
-        self.url = f'{endpoint_base()}/recipes/findByIngredients?apiKey={token}&ingredients={self.ingredients}&number={self.num_recipes}&ranking={self.rank}'
+        self.url = f'{root_endpoint}/recipes/findByIngredients?apiKey={self.api_key}&ingredients={self.ingredients}&number={self.num_recipes}&ranking={self.rank}'
         print(f'---  {self.url}  ---')
     
     # need to handle failure responses like this: {'status': 'failure', 'code': 401, 'message': 'You are not authorized. Please read https://spoonacular.com/food-api/docs#Authentication'}
@@ -299,6 +300,7 @@ class SlackMessageManyRecipes:
         self.num_recipes = num_recipes
         self.search_ingredients = search_ingredients
         self.github_link = github_link
+        self.token = os.environ.get("SLACK_BOT_TOKEN")
 
     def send(self) -> None:
         """Send a message with a link to slack"""
@@ -309,7 +311,7 @@ class SlackMessageManyRecipes:
 
         # instantiate the webclient with a bot token
         try:
-            client = WebClient(token=os.environ.get("SLACK_BOT_TOKEN"))
+            client = WebClient(token=self.token)
         except SlackApiError as e:
             logger.error("Error creating client: {}".format(e))
         
@@ -332,31 +334,3 @@ class SlackMessageManyRecipes:
                 logger.info(result)
             except SlackApiError as e:
                 logger.error("Error sending failure message: {}".format(e))   
-
-if __name__ == '__main__':
-    # search for ingredients, get recipe ids, pass to Bulk recipe info, pass to Recipe, pass to manyMarkdown recipes
-    search_ingredients = 'chicken, cabbage'
-    file_name = f'md_recipes/{search_ingredients}_{time.strftime("%Y%m%d-%H%M%S")}.md'
-    num_recipes = 5
-    recipes_by_ingredients = SearchRecipesByIngredients(ingredients=search_ingredients, num_recipes=num_recipes)
-    recipes_by_ingredients.get_recipes()
-    recipes_ids = recipes_by_ingredients.get_recipe_ids()
-    bulk_info = RecipesInfoBulk(recipes_ids).get_info()
-    recipe_list = []
-    for recipe_info in bulk_info:
-        r = Recipe()
-        r.info = recipe_info
-        r.get_ingredients_from_info()
-        r.get_instructions_from_info()
-        r.get_equipment_from_instructions()
-        r.get_name()
-        r.get_servings()
-        r.get_time()
-        recipe_list.append(r)
-    md = ManyRecipesMarkdown(recipe_list, file_name, searched_ingredients=search_ingredients)
-    md.to_markdown()
-    github = GithubPublisher(file_name)
-    github_link = github.publish()
-    channel_id = 'C06NZKA1L03'
-    message = SlackMessageManyRecipes(channel_id, num_recipes, search_ingredients, github_link)
-    message.send()

@@ -10,7 +10,6 @@ def app(args) -> None:
     file_name = f'md_recipes/{search_ingredients}_{time.strftime("%Y%m%d-%H%M%S")}.md'
     recipes_by_ingredients = SearchRecipesByIngredients(ingredients=search_ingredients, num_recipes=num_recipes)
     recipes_by_ingredients.get_recipes()
-    print(recipes_by_ingredients.recipes)
     recipes_ids = recipes_by_ingredients.get_recipe_ids()
     bulk_info = RecipesInfoBulk(recipes_ids).get_info()
     recipe_list = []
